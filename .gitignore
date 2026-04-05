@@ -1,0 +1,9 @@
+node_modules/
+videos/
+screenshots/
+reports/
+.env
+.auth/
+test-results/
+playwright-report/
+blob-report/

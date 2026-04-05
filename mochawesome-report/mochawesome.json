@@ -1,0 +1,110 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 1,
+    "passes": 0,
+    "pending": 0,
+    "failures": 1,
+    "start": "2024-10-07T07:32:10.252Z",
+    "end": "2024-10-07T07:32:39.894Z",
+    "duration": 29642,
+    "testsRegistered": 1,
+    "passPercent": 0,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "03941d66-799d-4ff3-a50a-db140033a6d0",
+      "title": "",
+      "fullFile": "cypress\\e2e\\Dx_PAT_New_HN.cy.js",
+      "file": "cypress\\e2e\\Dx_PAT_New_HN.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "d53d9368-351a-4961-845d-96abc496b99d",
+          "title": "template spec",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "success login",
+              "fullTitle": "template spec success login",
+              "timedOut": null,
+              "duration": 26885,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": null,
+              "code": "const {\n  firstName,\n  lastName,\n  nameTest,\n  lastNTest,\n  phoneNumber\n} = generateRandomData();\ncy.get('i.far.fa-cog').should('be.visible').eq(0).click();\ncy.wait(2000);\ncy.get('mat-dialog-container').should('be.visible');\ncy.get('#mat-input-0').type('com1');\ncy.get('input[placeholder=\"Enter your password\"]').type('passo');\ncy.get('button').contains('Save').click();\ncy.get('mat-dialog-container').should('not.exist');\ncy.get('input[placeholder=\"User Name\"]').type('GUIDE').as('Username');\ncy.get('@Username').should('have.value', 'GUIDE');\ncy.get('input[placeholder=\"Password\"]').type('1').as('Password');\ncy.get('@Password').should('have.value', '1');\ncy.contains('Login').click().wait(3000);\ncy.wait(2000);\ncy.contains('Welcome').should('be.visible');\ncy.wait(2000);\ncy.get('.ifbtn').click();\ncy.wait(2000);\ncy.contains('Registration').should('be.visible');\ncy.contains('Registration').click();\ncy.wait(2000);\ncy.contains('Patient Registration').should('be.visible');\ncy.contains('Patient Registration').click();\n// api interception\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/RegisterUser', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('registerUser');\ncy.intercept('GET', 'http://43.229.78.113:8001/ProductRESTService.svc/MobileGetRegistDocument', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('getMoblieRegistDocument');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/EnquireTambonLike', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('enquireTambon');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/EnquireHotKeysConfig', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('enquireHotKeys');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/getMasterSetup', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('getMasterSetup');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/getSetupCodeDataParam', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('getSetupCodeDataParam');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/getDefaultVisitCodeByComputer', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('getVisitCode');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/MobileEnquirePhysicianSpecialty', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('enquirePhysicianSpecialty');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/MobileEnquirePatientTrack', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('enquirePatientTrack');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/MobileGetSwitchStore', req => {\n  const start = Date.now();\n  req.continue(res => {\n    const responseTime = Date.now() - start;\n    res.headers['X-Response-Time'] = `${responseTime} ms`;\n  });\n}).as('getSwitchStore');\ncy.contains('New patient').should('be.visible');\ncy.contains('New patient').click({\n  force: true\n});\n// wait for api interception\ncy.wait('@registerUser').then(intercept => {\n  // const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  // const responseTime = parseInt(responseTimeHeader);\n  // cy.log(`registerUser Response time: ${responseTime} ms`);\n  // if (responseTime >= 5000) {\n  //   throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  // }\n});\ncy.wait('@getMoblieRegistDocument').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`getMoblieRegistDocument Response time: ${responseTime} ms`);\n  if (responseTime >= 20000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\ncy.wait('@getMasterSetup').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`getMasterSetup Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\ncy.wait('@enquireTambon').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`enquireTambon Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\ncy.wait('@enquireHotKeys').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`enquireHotKeys Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\ncy.wait('@getSetupCodeDataParam').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`getSetupCodeDataParam Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\ncy.wait('@getVisitCode').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`getVisitCode Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\ncy.wait('@enquirePhysicianSpecialty').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`enquirePhysicianSpecialty Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\n// cy.wait('@enquirePatientTrack');\ncy.wait('@getSwitchStore').then(intercept => {\n  const responseTimeHeader = intercept.response.headers['X-Response-Time'];\n  const responseTime = parseInt(responseTimeHeader);\n  cy.log(`getSwitchStore Response time: ${responseTime} ms`);\n  if (responseTime >= 5000) {\n    throw new Error(`API response time exceeded 5 seconds: ${responseTime} ms`);\n  }\n});\n// filling registration form\ncy.wait(2000);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(0).type(firstName);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(0).should('have.value', firstName);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(1).type(lastName);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(1).should('have.value', lastName);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(4).type(nameTest);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(4).should('have.value', nameTest);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(5).type(lastNTest);\ncy.get('div.col-lg-3').find('input.form-control.form-control-sm.curve').eq(5).should('have.value', lastNTest);\ncy.get('select.form-control.form-control-sm.curve').eq(0).select('Female');\ncy.get('select.form-control.form-control-sm.curve').should('have.value', '1');\ncy.get('textarea.form-control.curve').eq(0).should('have.value', address);\ncy.contains('Same IDCard Address').eq(0).scrollIntoView().click();\ncy.get('input[type=\"tel\"].form-control').eq(0).type(phoneNumber);\ncy.get('input[type=\"tel\"].form-control').eq(0).should('have.value', phoneNumber);\ncy.get('input.mat-checkbox-input[type=\"checkbox\"]').eq(12).click({\n  force: true\n});\ncy.get('input[type=\"tel\"].form-control').eq(1).type(phoneNumber);\ncy.get('input[type=\"tel\"].form-control').eq(1).should('have.value', phoneNumber);\ncy.wait(2000);\ncy.get('button.btn.btn-md.btn-primary.mr-2').click();\ncy.wait(2000);\n// cy.get('tr.mat-row.ng-star-inserted').should('be.visible'); \n// cy.wait(2000)\n//verify\ncy.get('div.mat-tab-label.mat-ripple.ng-star-inserted').eq(9).click();\ncy.get('input.form-control.form-control-sm.curve').eq(1).type(IDcardNum);\ncy.wait(2000);\ncy.get('button.btn.btn-sm.btn-primary.mr-2').eq(0).click();\ncy.wait(2000);\ncy.contains('IDCARD Incorrect').should('not.be.exist');\n//rights\ncy.get('div.mat-tab-label.mat-ripple').eq(1).click();\ncy.wait(2000);\ncy.get('input.stextbox.mat-autocomplete-trigger').eq(0).click();\ncy.contains('0100 : ชำระเงินเอง').click({\n  force: true\n}).wait(2000);\ncy.get('input.stextbox.mat-autocomplete-trigger').eq(1).click();\ncy.contains('813-CT-0001-B00 : ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร').click({\n  force: true\n}).wait(2000);\ncy.get('button.btn.btn-md.btn-primary.mr-2').click();\ncy.wait(2000);\ncy.get('div.mat-tab-label.mat-ripple').eq(0).click();\ncy.wait(2000);\n//submit \ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/EnquirePatientMaster').as('EnquirePatientMaster');\ncy.intercept('POST', 'http://43.229.78.113:8001/ProductRESTService.svc/MobileGetPatientHeader').as('MoblieGetPatientHeader');\ncy.get('.btn.btn-success').click({\n  force: true\n});\ncy.wait('@EnquirePatientMaster').then(interception => {\n  const requestBody = interception.request.body;\n  cy.log(JSON.stringify(requestBody));\n});\ncy.wait('@MoblieGetPatientHeader').then(interception => {\n  cy.contains('Success').should('be.visible');\n  const responseBody = interception.response.body;\n  cy.log(JSON.stringify(responseBody));\n  const hn = responseBody.HN;\n  const firstPatient = responseBody.ListOfPatientName[0];\n  const firstName = firstPatient.FirstName;\n  const lastName = firstPatient.LastName;\n  cy.log(`HN: ${hn}`);\n  cy.log(`First Name: ${firstName}`);\n  cy.log(`Last Name: ${lastName}`);\n  cy.wait(2000);\n  cy.contains(`${hn}`).should('be.visible');\n  // cy.contains(`${firstName}`).should('have.value', firstName);\n  cy.contains(`${firstName}`).should('be.visible');\n  // cy.contains(`${lastName}`).should('have.value', lastName);\n  cy.contains(`${lastName}`).should('be.visible');\n});\n//opd description\ncy.get('input.stextbox.mat-autocomplete-trigger').eq(2).click();\ncy.contains('1001 : อายุรกรรมทั่วไป').click({\n  force: true\n}).wait(2000);\ncy.get('input.stextbox.mat-autocomplete-trigger').eq(4).click();\ncy.contains('PK-00022-00 : พ.รพ.ทดสอบ1').click({\n  force: true\n}).wait(2000);\ncy.get('input.stextbox.mat-autocomplete-trigger').eq(6).click();\ncy.contains('02 : Appointment').click({\n  force: true\n}).wait(2000);\n// cy.get('input.stextbox.mat-autocomplete-trigger').eq(8).click()\n// cy.contains('0100 : ชำระเงินเอง').click({ force: true }).wait(2000);\ncy.get('button.btn.btn-sm.btn-primary.mr-2').eq(2).click();\n// // cy.contains('Registration').scrollIntoView().should('be.visible')\n// // // // cy.get('mat-autocomplete-trigger').scrollIntoView().should('be.visible')",
+              "err": {
+                "message": "AssertionError: Timed out retrying after 4000ms: Expected to find element: `mat-dialog-container`, but never found it.",
+                "estack": "AssertionError: Timed out retrying after 4000ms: Expected to find element: `mat-dialog-container`, but never found it.\n    at Context.eval (webpack:///./cypress/e2e/Dx_PAT_New_HN.cy.js:85:33)",
+                "diff": null
+              },
+              "uuid": "204dc3a1-bb84-4947-9d48-c0d9215341ee",
+              "parentUUID": "d53d9368-351a-4961-845d-96abc496b99d",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [],
+          "failures": [
+            "204dc3a1-bb84-4947-9d48-c0d9215341ee"
+          ],
+          "pending": [],
+          "skipped": [],
+          "duration": 26885,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.0.1"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": true,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.3"
+    },
+    "marge": {
+      "options": {
+        "charts": true,
+        "reportPageTitle": "Custom Title",
+        "embeddedScreenshots": true,
+        "inlineAssets": true,
+        "saveAllAttempts": false
+      },
+      "version": "6.2.0"
+    }
+  }
+}
