@@ -64,14 +64,12 @@ async function login(page: Page) {
     const closeBtn = page
       .locator(".modal-dialog .close, .far.fa-times-circle, .far")
       .first();
-
-    // เปลี่ยนมาใช้ waitFor() แทน isVisible() โดยให้เวลารอ 3 วินาที
     await closeBtn.waitFor({ state: "visible", timeout: 3000 });
 
     await closeBtn.click();
     console.log(">>> Closed Pop-up/Modal");
   } catch (e) {
-    // TimeoutError จะตกลงมาที่นี่แปลว่าไม่มี Modal โผล่มาใน 3 วินาที ซึ่งถือว่าปกติ
+    // TimeoutError จะตกลงมาที่นี่แปลว่าไม่มี Modal โผล่มาใน 3 วินาที 
     console.log(">>> No Pop-up/Modal appeared");
   }
 }
@@ -108,7 +106,7 @@ test("01 - New HN - Login and Create New Patient", async ({ page }) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        // ส่งโครงสร้าง JSON ให้เหมือนของจริงเป๊ะๆ (เปลี่ยนเป็น true ถ้าต้องการเทสต์กรอก HN เอง)
+        // (เปลี่ยนเป็น true ถ้าต้องการเทสต์กรอก HN เอง)
         body: JSON.stringify({
           AllowManualHN: false,
           ErrorMessage: "",
