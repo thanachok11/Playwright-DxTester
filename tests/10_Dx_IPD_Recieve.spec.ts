@@ -1,10 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/base-test';
 import { sendMsgToTelegram, sendScreenshotToTelegram } from './utils/telegram-utils';
 import { generateDatetimeTick } from './utils/data-utils';
 import PAT_NUM_RAW from '../cypress/fixtures/PAT_NUM.json';
 const PAT_NUM: any = PAT_NUM_RAW;
 import dotenv from 'dotenv';
-import { LoginPage } from '../pages/login.page';
 dotenv.config();
 
 const specVersion = '1.15';
@@ -14,13 +13,6 @@ let headerName = '';
 test.describe('IPD Receieve', () => {
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        
-        if (page.url().includes('/login')) {
-            const loginPage = new LoginPage(page);
-            const user = (process.env.USERNAME2 || 'dtest');
-            await loginPage.loginWithComRole('com1', 'passo', user, process.env.PASSWORD || '1');
-        }
         
         await page.waitForLoadState('networkidle');
         

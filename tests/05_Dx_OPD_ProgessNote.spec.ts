@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/base-test';
 import { sendMsgToTelegram, sendScreenshotToTelegram } from './utils/telegram-utils';
 import { generateDatetimeTick } from './utils/data-utils';
 import dotenv from 'dotenv';
-import { LoginPage } from '../pages/login.page';
 dotenv.config();
 
 const specVersion = '1.15';
@@ -14,13 +13,6 @@ test.describe('Dx_OPD_PROGRESSNOTE', () => {
     let HNNum = '';
 
     test.beforeEach(async ({ page, request }) => {
-        await page.goto('/');
-        
-        if (page.url().includes('/login')) {
-            const loginPage = new LoginPage(page);
-            const user = 'mine';
-            await loginPage.loginWithComRole('com1', 'passo', user, process.env.PASSWORD || '1');
-        }
         
         await page.waitForLoadState('networkidle');
         

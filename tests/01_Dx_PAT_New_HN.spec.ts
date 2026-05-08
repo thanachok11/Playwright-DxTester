@@ -1,226 +1,279 @@
-import { test, expect } from '@playwright/test';
-import { generateThaiID, generateRandomData, generateDatetimeTick } from './utils/data-utils';
-import { sendMsgToTelegram, sendScreenshotToTelegram } from './utils/telegram-utils';
-import PatientsRaw from '../cypress/fixtures/Pat_info.json';
-const Patients: any = PatientsRaw;
-import fs from 'fs';
-import path from 'path';
-import dotenv from 'dotenv';
+import { test, expect, Page } from "@playwright/test";
+import { sendMsgToTelegram } from "./utils/telegram-utils";
+import fs from "fs";
+import path from "path";
 
-dotenv.config();
+test.use({
+  viewport: { width: 1920, height: 1080 },
+});
 
-const specVersion = '1.16';
-const apiUrl = process.env.API_URL;
+// --- Helper Functions ---
 
-test.describe(`New_HN ${specVersion}`, () => {
-  
-  test.beforeEach(async ({ page }) => {
-    // Check API status
+async function setupDebug(page: Page) {
+  page.on("console", (msg) =>
+    console.log(`[browser:${msg.type()}] ${msg.text()}`),
+  );
+  page.on("pageerror", (err) => console.log(`[pageerror] ${err.message}`));
+}
+
+function generateThaiID() {
+  const digits = Array.from({ length: 12 }, () =>
+    Math.floor(Math.random() * 10),
+  );
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += digits[i] * (13 - i);
+  digits.push((11 - (sum % 11)) % 10);
+  return digits.join("");
+}
+
+function randomName(base: string) {
+  return `${base}${Math.floor(Math.random() * 10000)}`;
+}
+
+async function waitForAppStable(page: Page) {
+  await page.waitForLoadState("domcontentloaded");
+  await page.waitForTimeout(2000); // เพิ่มเวลาให้นิ่งขึ้น
+}
+
+// --- Main Logic ---
+
+async function login(page: Page) {
+  await page.goto("http://43.229.78.113:8505/login", {
+    waitUntil: "networkidle",
+  });
+
+  // Company Config
+  await page.locator("i").first().click();
+  await page.locator("#mat-input-0").fill("com1");
+  await page
+    .getByRole("textbox", { name: "Enter your password" })
+    .fill("passo");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  // Login Form
+  await page.getByRole("textbox", { name: "User Name" }).fill("dtest");
+  await page.getByRole("textbox", { name: "Password" }).fill("1");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await expect(page).not.toHaveURL(/\/login$/i, { timeout: 60000 });
+  console.log(">>> Login Successful");
+  await page.waitForLoadState("networkidle");
+
+  // จัดการ Modal ที่อาจโผล่มาขวาง
+  try {
+    const closeBtn = page
+      .locator(".modal-dialog .close, .far.fa-times-circle, .far")
+      .first();
+
+    // เปลี่ยนมาใช้ waitFor() แทน isVisible() โดยให้เวลารอ 3 วินาที
+    await closeBtn.waitFor({ state: "visible", timeout: 3000 });
+
+    await closeBtn.click();
+    console.log(">>> Closed Pop-up/Modal");
+  } catch (e) {
+    // TimeoutError จะตกลงมาที่นี่แปลว่าไม่มี Modal โผล่มาใน 3 วินาที ซึ่งถือว่าปกติ
+    console.log(">>> No Pop-up/Modal appeared");
+  }
+}
+
+async function openNewPatientForm(page: Page) {
+  // ไปหน้า Registration
+  await page.locator("span:nth-child(2) > a").click();
+  await page.getByRole("button").first().click();
+  await page.getByRole("button", { name: "Registration" }).click();
+  await page.getByText("Patient Registration", { exact: true }).click();
+
+  const newPatientButton = page.getByRole("button", { name: "New patient" });
+  await expect(newPatientButton).toBeVisible({ timeout: 30000 });
+
+  // ก่อนคลิก New Patient ต้องมั่นใจว่า Config โหลดเสร็จ (ดัก Error AllowManualHN)
+  await page.waitForLoadState("networkidle");
+  await newPatientButton.click();
+
+  console.log(">>> Navigating to Registration Form...");
+}
+
+// --- Test Case ---
+
+test("01 - New HN - Login and Create New Patient", async ({ page }) => {
+  test.setTimeout(300000);
+  await setupDebug(page);
+
+  // *** แก้ไขการดัก API ให้ตรงกับ URL จริงที่ระบบเรียกใช้ ***
+  await page.route("**/ProductRESTService.svc/AllowManualHN", async (route) => {
+    // ตรวจสอบว่าเป็น POST method ตามที่หน้าเว็บเรียกจริงๆ
+    if (route.request().method() === "POST") {
+      console.log(`>>> Mocking Config: ${route.request().url()}`);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        // ส่งโครงสร้าง JSON ให้เหมือนของจริงเป๊ะๆ (เปลี่ยนเป็น true ถ้าต้องการเทสต์กรอก HN เอง)
+        body: JSON.stringify({
+          AllowManualHN: false,
+          ErrorMessage: "",
+          ResultStatus: true,
+        }),
+      });
+    } else {
+      await route.continue(); // ถ้าไม่ใช่ POST ปล่อยผ่านไป
+    }
+  });
+
+  let capturedHN = "";
+  let capturedVN = "";
+  let patientName = "";
+
+  // ดักจับ HN/VN จาก Response
+  page.on("response", async (response) => {
+    const url = response.url();
     try {
-        const response = await page.request.get(`${apiUrl}VerServer`, { timeout: 150000 });
-        expect(response.ok()).toBeTruthy();
-    } catch (e: any) {
-        console.error('API VerServer check failed:', e);
-    }
-
-    // Navigate to the app (will use storageState automatically)
-    await page.goto('/');
-    
-    // Ensure we are on the main page/dashboard
-    await page.waitForLoadState('networkidle');
-    
-    // Handle persistent UI elements
-    const registrationBtn = page.locator('text=Registration');
-    if (await registrationBtn.isVisible()) {
-        await registrationBtn.click();
-    }
-    
-    await page.locator('text=Patient Registration').click();
-    await page.waitForTimeout(5000);
-    await page.locator('text=New patient').click();
-    await page.waitForTimeout(5000);
-  });
-
-  // Handle failures
-  test.afterEach(async ({ page }, testInfo) => {
-    if (testInfo.status !== testInfo.expectedStatus) {
-      const filename = `test_${generateDatetimeTick()}.png`;
-      const screenshotPath = `test-results/screenshots/${filename}`;
-      await page.screenshot({ path: screenshotPath });
-      await sendScreenshotToTelegram(screenshotPath, filename, `Test failed: ${testInfo.error.message}`);
-    }
-  });
-
-  Patients.forEach((patient) => {
-    test(`${patient.Sex.label} ${patient.Date.label} - PAT_NO ${patient.PAT_NO}`, async ({ page }) => {
-      
-      const headerName = `${patient.Sex.label} ${patient.Date.label} - PAT_NO ${patient.PAT_NO}`;
-      const { firstName, lastName, nameTest, lastNTest, phoneNumber } = generateRandomData();
-      const IDcardNum = generateThaiID();
-
-      // Intercepting network requests
-      const enHnPromise = page.waitForRequest(request => 
-        request.url().includes('MobileEnquireHNLog') && request.method() === 'POST'
-      );
-      const hisBannerPromise = page.waitForResponse(response => 
-        response.url().includes('MobileEnquireHISBanner') && response.request().method() === 'POST'
-      );
-
-      // Filling registration form
-      await page.waitForTimeout(2000);
-      const inputs = page.locator('div.col-lg-3 input.form-control.form-control-sm.curve');
-      
-      await inputs.nth(0).fill(firstName);
-      await inputs.nth(1).fill(lastName);
-      await inputs.nth(4).fill(nameTest);
-      await inputs.nth(5).fill(lastNTest);
-
-      await page.fill('input[placeholder="Date of Birth"]', patient.Date.date);
-      await page.selectOption('select.form-control.form-control-sm.curve', { label: patient.Sex.label });
-
-      await page.locator('textarea.form-control.curve').first().fill(patient.address.location);
-      
-      const zipInput = page.locator('input[placeholder="ตำบล/ อำเภอ / จังหวัด / รหัสไปรษณีย์"]').first();
-      await zipInput.fill(patient.address.zipcode);
-      await page.waitForTimeout(2000);
-      await zipInput.press('Enter');
-
-      await page.locator('input[type="tel"].form-control').first().fill(phoneNumber);
-      
-      // Checkbox for address copy
-      await page.locator('input.mat-checkbox-input[type="checkbox"]').nth(12).click({ force: true });
-      await inputs.nth(2).fill(patient.address.location);
-
-      // Address Type
-      const addressTypeContainer = page.locator('text=Address Type').locator('..').locator('..');
-      await addressTypeContainer.locator('input').fill('3');
-      await addressTypeContainer.locator('input').press('Enter');
-
-      await page.waitForTimeout(2000);
-      await page.click('button.btn.btn-md.btn-primary.mr-2');
-      await page.waitForTimeout(2000);
-
-      // Tab logic
-      await page.locator('div.mat-tab-label.mat-ripple.ng-star-inserted').nth(9).click();
-
-      const cardTypeContainer = page.locator('text=Card Type').locator('..').locator('..');
-      await cardTypeContainer.locator('input').click({ force: true });
-      await page.locator('text=Identity').click({ force: true });
-
-      await inputs.nth(1).fill(IDcardNum);
-      await page.waitForTimeout(2000);
-      await page.locator('button.btn.btn-sm.btn-primary.mr-2').first().click();
-      await page.waitForTimeout(2000);
-      
-      await expect(page.locator('text=IDCARD Incorrect')).not.toBeVisible();
-
-      // Clinical rights tab
-      await page.locator('div.mat-tab-label.mat-ripple').nth(1).click({ force: true });
-      await page.waitForTimeout(2000);
-      
-      const autoCompleteInputs = page.locator('input.stextbox.mat-autocomplete-trigger');
-      await autoCompleteInputs.nth(0).click({ force: true });
-      await page.locator('text=000').click({ force: true });
-      await page.waitForTimeout(2000);
-      
-      await page.click('button.btn.btn-md.btn-primary.mr-2');
-      await page.waitForTimeout(2000);
-      await page.locator('div.mat-tab-label.mat-ripple').nth(0).click();
-      await page.waitForTimeout(2000);
-
-      // Chronic disease
-      await page.locator('text=โรคประจำตัว').click();
-      await page.waitForTimeout(2000);
-      
-      const icdInput = page.locator('div.col-8 b:has-text("ICD")').locator('..').locator('..').locator('input');
-      await icdInput.click();
-      await icdInput.fill('023');
-      await page.waitForTimeout(2000);
-      await page.locator('text=C023 : Anterior two-thirds of tongue').click();
-      await page.waitForTimeout(1000);
-
-      const cm9Input = page.locator('span.text-label:has-text("CM9")').locator('..').locator('..').locator('input');
-      await cm9Input.click();
-      await cm9Input.fill('0602');
-      await page.waitForTimeout(1000);
-      await page.locator('text=0602').click();
-      
-      await page.selectOption('select.form-control.form-control-sm.curve', { index: 1 });
-      await page.waitForTimeout(1000);
-      await page.click('text=Apply');
-
-      // Submit form
-      await page.locator('.btn.btn-sm.btn-primary:has-text("Submit")').click({ force: true });
-      await page.waitForTimeout(3000);
-
-      // Allergy
-      await page.locator('.fas.fa-2x.fa-bars.pointer').click({ force: true });
-      await page.waitForTimeout(2000);
-      await page.locator('span.dropdown-item:has-text("Allergy")').click();
-      await page.waitForTimeout(3000);
-      
-      await page.fill('.stextbox', 'Betadine');
-      await page.waitForTimeout(2000);
-      await page.locator('.mat-option-text').click({ force: true });
-      await page.waitForTimeout(3000);
-      
-      await page.locator('.col-lg-6.bc_primary .btn_bg').first().click({ force: true });
-      await page.waitForTimeout(3000);
-      await page.locator('.row .btn:has-text("Close"), .row .btn:has-text("ยกเลิก")').click(); // Custom guess for close btn
-      await page.locator('a > .far').click({ force: true });
-      await page.waitForTimeout(3000);
-
-      // OPD Visit
-      await page.locator('text=ข้อมูลผู้ป่วย').click({ force: true });
-      await page.waitForTimeout(2000);
-      
-      await autoCompleteInputs.nth(2).click({ force: true });
-      await page.locator('text=OPD1 : OPD 1').click({ force: true });
-      await page.waitForTimeout(2000);
-      
-      await autoCompleteInputs.nth(4).click({ force: true });
-      await page.locator('text=000 : ไม่ระบุแพทย์').click({ force: true });
-      await page.waitForTimeout(2000);
-      
-      await autoCompleteInputs.nth(8).click();
-      await page.locator('text=10.2:ชำระเงินเองคนไทย').click({ force: true });
-      await page.waitForTimeout(2000);
-
-      await page.locator('button.btn.btn-sm.btn-primary.mr-2').nth(2).click();
-      await page.waitForTimeout(5000);
-
-      await page.locator('text=Submit OPD Visit').click({ force: true });
-
-      // Wait for network results
-      const enHnRequest = await enHnPromise;
-      const hisBannerResponse = await hisBannerPromise;
-      
-      const hnLogPayload = enHnRequest.postDataJSON();
-      const bannerResponsePayload = await hisBannerResponse.json();
-      const bannerRequestPayload = JSON.parse(enHnRequest.postData()); // Using the wait request logic
-
-      const HN = bannerRequestPayload.param.HN;
-      const VN = bannerRequestPayload.param.VN;
-
-      // Update PAT_NUM.json (Equivalent to cy.readFile/writeFile)
-      const patNumPath = path.join(__dirname, '../cypress/fixtures/PAT_NUM.json');
-      let data: any = {};
-      if (fs.existsSync(patNumPath)) {
-        data = JSON.parse(fs.readFileSync(patNumPath, 'utf8'));
+      if (
+        url.includes("MobileUpdatePatientHeader") &&
+        response.status() === 200
+      ) {
+        const body = await response.json();
+        if (body.HN) capturedHN = body.HN;
       }
-      
-      const patNum = data.PAT_NUM || {};
-      patNum[`PAT_${patient.PAT_NO}`] = {
-        PAT_NO: patient.PAT_NO,
-        [`HN${patient.PAT_NO}`]: HN,
-        [`VN${patient.PAT_NO}`]: VN
-      };
-      
-      fs.writeFileSync(patNumPath, JSON.stringify({ PAT_NUM: patNum }, null, 2));
-
-      // Notifications
-      const message = `Title : ${headerName}| New HN: ${HN} | New VN: ${VN} | Version : ${specVersion}`;
-      await sendMsgToTelegram(message);
-    });
+      if (url.includes("MobileUpdateOPDHeader") && response.status() === 200) {
+        const body = await response.json();
+        if (body.VN) capturedVN = body.VN;
+      }
+    } catch (e) {}
   });
+
+  await login(page);
+  await openNewPatientForm(page);
+
+  // --------- General Information ---------
+
+  // 1. สร้างตัวแปรสุ่มชื่อทั้งไทยและอังกฤษ
+  const fNameThai = randomName("ทดสอบ");
+  const lNameThai = randomName("นามสกุล");
+  const fNameEng = randomName("testFirst");
+  const lNameEng = randomName("testLast");
+
+  patientName = `${fNameThai} ${lNameThai}`; // เก็บไว้ส่งเข้า Telegram
+
+  // 2. กรอกชื่อ-นามสกุล ภาษาไทย
+  await page.getByRole("textbox").nth(3).fill(fNameThai);
+  await page.getByRole("textbox").nth(4).fill(lNameThai);
+
+  // 3. กรอกชื่อ-นามสกุล ภาษาอังกฤษ (อ้างอิงจาก Codegen ของคุณ)
+  await page
+    .locator("div:nth-child(4) > div:nth-child(2) > .form-control")
+    .fill(fNameEng);
+  await page
+    .locator("div:nth-child(4) > div:nth-child(3) > .form-control")
+    .first()
+    .fill(lNameEng);
+
+  // --------- DOB & Gender ---------
+  await page.getByRole("textbox", { name: "Date of Birth" }).fill("12042003");
+  await page.getByRole("combobox").nth(1).selectOption("2");
+
+  // --------- Address ---------
+  await page.locator(".col-6 > .form-control").fill("123");
+  const addr = page.getByRole("combobox", {
+    name: "ตำบล/ อำเภอ / จังหวัด / รหัสไปรษณีย์",
+  });
+  await addr.fill("10210");
+
+  await page.getByRole("button", { name: "Apply" }).nth(0).click();
+  await page.waitForTimeout(10000);
+
+  // --------- Reference ---------
+  await page.getByText("Reference", { exact: true }).click();
+  const refType = page.locator("app-select-enum").getByRole("combobox");
+  await refType.click();
+  await page.getByText("Identity", { exact: true }).click();
+
+  const refInput = page
+    .getByRole("tabpanel", { name: "Reference" })
+    .locator('input[role="combobox"]#idhtml')
+    .first();
+  await refInput.click();
+  await page.getByText("01 : เลขที่บัตรประชาชน", { exact: true }).click();
+  await page.getByRole("textbox").nth(3).fill(generateThaiID());
+  await page
+    .getByLabel("Reference")
+    .getByRole("button", { name: "Apply" })
+    .click({ force: true });
+  await page.waitForTimeout(10000);
+  // --------- Extra ---------
+  await page.getByText("Extra", { exact: true }).click();
+  const extraCombo = page.locator('input[role="combobox"]#idhtml');
+  await extraCombo.first().click();
+  await page.getByText("01 : ห้ามเปิดเผย", { exact: true }).click();
+  await extraCombo.nth(1).click();
+  await page.getByText("9998 : VIP Remark.", { exact: true }).click();
+
+  // --------- Submit Registration ---------
+
+  // 1. กดปุ่ม Submit และรอให้ API เซฟข้อมูลเส้นหลักตอบกลับมา
+
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+
+  await page.waitForLoadState("networkidle"); // <- เพิ่มบรรทัดนี้
+  await page.waitForTimeout(1000); // รอเพิ่มเผื่อ UI Update
+  // await page.waitForTimeout(3000); // ถ้าจะใส่รอแอนิเมชันนิดหน่อยก็ได้ แต่มักจะไม่จำเป็นแล้ว
+  // // --------- Right & Visit ---------
+  // // เลือกสิทธิ์
+  // const rightCombo = page.getByRole("combobox").first();
+  // await rightCombo.click();
+  // await rightCombo.press("ArrowDown");
+  // await page.getByText("005 : ประกันชีวิตกลุ่ม", { exact: false }).click();
+  // await page
+  //   .getByText("001-SP-0000-000 : ส่วนลดเหมาจ่าย", { exact: false })
+  //   .click();
+
+  // --------- Right & Visit ---------
+
+  // ตอนนี้หน้าจอเคลียร์แล้ว สามารถกดปุ่ม Update RightCode ได้อย่างปลอดภัยชัวร์ๆ 100%
+  const updateRightBtn = page.getByRole("button", { name: "Update RightCode" });
+  await updateRightBtn.waitFor({ state: "visible", timeout: 10000 });
+  await updateRightBtn.click();
+
+  // เลือกแผนก/แพทย์
+  await page
+    .locator(".col-6 > div > app-auto-complete-master-setup > div > #idhtml")
+    .first()
+    .click();
+  await page
+    .locator("span")
+    .filter({ hasText: ": คลินิกห้อง ฉุกเฉิน" })
+    .first()
+    .click();
+  await page.locator(".bg-valid > div > #idhtml").click();
+  await page
+    .locator("span")
+    .filter({ hasText: ": ไม่ระบุแพทย์." })
+    .first()
+    .click();
+  await page.waitForTimeout(10000);
+
+  await page.getByText("Apply").click();
+  await page.getByText("Submit OPD Visit").click();
+  await page.waitForTimeout(3000);
+
+  try {
+    await page.getByRole("button", { name: "OK" }).click();
+  } catch (e) {}
+
+  // --------- Finalize ---------
+  console.log(`>>> Success! HN: ${capturedHN}, VN: ${capturedVN}`);
+
+  if (capturedHN || capturedVN) {
+    const msg = `✅ [New Patient]\nName: ${patientName}\nHN: ${capturedHN || "N/A"}\nVN: ${capturedVN || "N/A"}`;
+    await sendMsgToTelegram(msg);
+
+    // Save to JSON
+    const patNumPath = path.join(__dirname, "../cypress/fixtures/PAT_NUM.json");
+    let data = { PAT_NUM: { PAT_1: {} } };
+    if (fs.existsSync(patNumPath)) {
+      data = JSON.parse(fs.readFileSync(patNumPath, "utf8"));
+    }
+    data.PAT_NUM["PAT_1"] = { HN1: capturedHN, VN1: capturedVN };
+    fs.writeFileSync(patNumPath, JSON.stringify(data, null, 2));
+  }
 });

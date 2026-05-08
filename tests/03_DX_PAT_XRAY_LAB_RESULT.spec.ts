@@ -1,10 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/base-test';
 import { sendMsgToTelegram } from './utils/telegram-utils';
 import PAT_NUM_RAW from '../cypress/fixtures/PAT_NUM.json';
 const PAT_NUM: any = PAT_NUM_RAW;
 import path from 'path';
 import dotenv from 'dotenv';
-import { LoginPage } from '../pages/login.page';
 dotenv.config();
 
 const specVersion = '1.15';
@@ -14,12 +13,6 @@ let headerName = '';
 test.describe("LAB_XRAY_RESULT", () => {
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        
-        if (page.url().includes('/login')) {
-            const loginPage = new LoginPage(page);
-            await loginPage.loginWithComRole('com1', 'passo', process.env.USERNAME2!, process.env.PASSWORD!);
-        }
         
         await page.waitForLoadState('networkidle');
         

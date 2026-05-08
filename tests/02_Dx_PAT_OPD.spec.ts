@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/base-test';
+import { LoginPage } from '../pages/login.page';
 import { sendMsgToTelegram } from './utils/telegram-utils';
 import patientDataRaw from '../cypress/fixtures/DX_DATA.json';
 const patientData: any = patientDataRaw;
@@ -6,7 +7,6 @@ import PAT_NUM_RAW from '../cypress/fixtures/PAT_NUM.json';
 const PAT_NUM: any = PAT_NUM_RAW;
 import path from 'path';
 import dotenv from 'dotenv';
-import { LoginPage } from '../pages/login.page';
 dotenv.config();
 
 const specVersion = '1.16';
@@ -16,9 +16,14 @@ let headerName = '';
 test.describe(`OPD_NurseWorkench_VitalSign ${specVersion}`, () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
+    const loginPage = new LoginPage(page);
+    const username = process.env.USERNAME2!;
+    const password = process.env.PASSWORD!;
+
+    await page.goto('/login');
+    await loginPage.loginWithComRole('com1', 'passo', username, password);
+    await page.waitForURL(/\/(main|dashboard)/, { timeout: 30000 });
+
     // Handle modal
     const bodyText = await page.innerText('body');
     if (bodyText.includes('Verbal Order')) {

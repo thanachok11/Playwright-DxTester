@@ -1,0 +1,35 @@
+{
+  "SearchInfo": [
+    {
+      "TestName": "Search Patient by HN",
+      "ErrorMessage": "",
+      "ListOfDetail": [],
+      "ResultStatusType": 1,
+      "ResultStatus": true
+    }
+  ],
+  "IDCardNo": "1234567890123",
+  "HN": "12345",
+  "FirstNameLike": "Test",
+  "LastNameLike": "User",
+  "HNInfo": {
+    "PatientType": "OPD",
+    "ContextKey": "ReU"
+  },
+  "ListOfChronic": {
+    "ICD": "C023",
+    "CM9": "0602"
+  },
+  "VNInfo": {
+    "ClinicCode": "OPD1",
+    "DoctorCode": "000"
+  },
+  "PatAllergy": {
+    "ListOfData": [
+      {
+        "DrugName": "Betadine",
+        "Reaction": "Rash"
+      }
+    ]
+  }
+}

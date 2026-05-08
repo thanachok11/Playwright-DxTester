@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/base-test';
 import { sendMsgToTelegram } from './utils/telegram-utils';
 import patientDataRaw from '../cypress/fixtures/DX_DATA.json';
 const patientData: any = patientDataRaw;
@@ -9,8 +9,8 @@ import { LoginPage } from '../pages/login.page';
 dotenv.config();
 
 const specVersion = '1.15';
-const { Medicine } = patientData;
-const [Paracetamol, Amoxycillin, Betadine] = Medicine;
+const { Medicine = [] } = patientData;
+const [Paracetamol = { Paracetamol: {} }, Amoxycillin = { Amoxycillin: {} }, Betadine = { Betadine: {} }] = Medicine;
 let headerName = '';
 
 test.describe(`OPD_MEDICINE ${specVersion}`, () => {

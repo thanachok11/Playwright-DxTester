@@ -14,13 +14,6 @@ test.describe(`Doctor Workbench ${specVersion}`, () => {
     let HNNum = '';
 
     test.beforeEach(async ({ page, request }) => {
-        await page.goto('/');
-        
-        if (page.url().includes('/login')) {
-            const loginPage = new LoginPage(page);
-            const user = (process.env.USERNAME2 || 'dtest');
-            await loginPage.loginWithComRole('com1', 'passo', user, process.env.PASSWORD || '1');
-        }
         
         await page.waitForLoadState('networkidle');
         

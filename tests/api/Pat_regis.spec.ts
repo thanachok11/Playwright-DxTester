@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 const data = require('../../cypress/fixtures/PAT_REGIS.json');
+const { SearchInfo = [], HNInfo = {}, ListOfChronic = {}, VNInfo = {}, PatAllergy = { ListOfData: [] } } = data;
 const { generateThaiID, generateRandomData } = require('../utils/data-utils');
 import dotenv from 'dotenv';
 dotenv.config();
@@ -11,7 +12,7 @@ test.describe("Registration API", () => {
     let VN = '';
 
     test.describe("Searching", () => {
-        for (const searchInfo of data.SearchInfo) {
+        for (const searchInfo of SearchInfo) {
             test(`${searchInfo.TestName}`, async ({ request }) => {
                 const response = await request.post(`${apiUrl}EnquirePatientMaster`, {
                     data: {
