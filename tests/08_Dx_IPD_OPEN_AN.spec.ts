@@ -34,7 +34,8 @@ test.describe('Open An', () => {
     await page.click('text=New Admit');
     await page.waitForTimeout(5000);
     
-    const HNNum = PAT_NUM.PAT_NUM.PAT_1.HN1;
+    const patKey = process.env.PAT_KEY || 'PAT_1';
+    const HNNum = PAT_NUM.PAT_NUM[patKey]?.HN1 || PAT_NUM.PAT_NUM.PAT_1.HN1;
     await page.fill(':nth-child(3) > .col-sm-9 > .form-control', HNNum);
     await page.click('.mr-2');
     await page.waitForTimeout(3000);
@@ -138,9 +139,10 @@ test.describe('Open An', () => {
     const patNumPath = path.join(__dirname, '../cypress/fixtures/PAT_NUM.json');
     const data = JSON.parse(fs.readFileSync(patNumPath, 'utf8'));
     const patNum = data.PAT_NUM || {};
+    const patKey = process.env.PAT_KEY || 'PAT_1';
     
-    patNum['PAT_1'] = {
-      ...patNum['PAT_1'],
+    patNum[patKey] = {
+      ...patNum[patKey],
       [`AN1`]: AN
     };
     

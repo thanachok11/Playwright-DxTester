@@ -2,7 +2,11 @@ import { test, expect } from './utils/base-test';
 import { sendMsgToTelegram, sendScreenshotToTelegram } from './utils/telegram-utils';
 import { generateDatetimeTick } from './utils/data-utils';
 import PAT_NUM_RAW from '../cypress/fixtures/PAT_NUM.json';
-const PAT_NUM: any = PAT_NUM_RAW;
+const PAT_NUM: any = JSON.parse(JSON.stringify(PAT_NUM_RAW)); // Deep copy to allow mutation
+const patKey = process.env.PAT_KEY || 'PAT_1';
+if (patKey !== 'PAT_1' && PAT_NUM.PAT_NUM && PAT_NUM.PAT_NUM[patKey]) {
+    PAT_NUM.PAT_NUM.PAT_1 = PAT_NUM.PAT_NUM[patKey];
+}
 import dotenv from 'dotenv';
 dotenv.config();
 

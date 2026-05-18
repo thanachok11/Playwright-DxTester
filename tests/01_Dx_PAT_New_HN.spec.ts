@@ -69,7 +69,7 @@ async function login(page: Page) {
     await closeBtn.click();
     console.log(">>> Closed Pop-up/Modal");
   } catch (e) {
-    // TimeoutError จะตกลงมาที่นี่แปลว่าไม่มี Modal โผล่มาใน 3 วินาที 
+    // TimeoutError จะตกลงมาที่นี่แปลว่าไม่มี Modal โผล่มาใน 3 วินาที
     console.log(">>> No Pop-up/Modal appeared");
   }
 }
@@ -96,7 +96,50 @@ async function openNewPatientForm(page: Page) {
 test("01 - New HN - Login and Create New Patient", async ({ page }) => {
   test.setTimeout(300000);
   await setupDebug(page);
+  // ==========================================
+  // 1. จัดการลบไฟล์ JSON เก่าทิ้งก่อนเริ่มทำอย่างอื่น (ถ้าเลยเที่ยงคืนหรือเริ่มใหม่)
+  // ==========================================
+  const patNumPath = path.join(__dirname, "../cypress/fixtures/PAT_NUM.json");
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const currentDateStr = getLocalDateString();
+  
+  let shouldReset = false;
+  if (fs.existsSync(patNumPath)) {
+    try {
+      const existingData = JSON.parse(fs.readFileSync(patNumPath, "utf8"));
+      if (existingData.date && existingData.date !== currentDateStr) {
+        shouldReset = true;
+        console.log(`>>> Midnight passed! JSON date was: ${existingData.date}, Current date: ${currentDateStr}. Resetting...`);
+      }
+    } catch (e) {
+      shouldReset = true;
+    }
+  }
 
+  let finalPatKey = process.env.PAT_KEY || "PAT_1";
+  if (shouldReset) {
+    finalPatKey = "PAT_1"; // เริ่มเก็บจาก 001 ใหม่หลังจากเลยเที่ยงคืน
+  }
+
+  if (finalPatKey === "PAT_1" || shouldReset || process.env.RESET_PAT_DATA === "true") {
+    if (fs.existsSync(patNumPath)) {
+      fs.unlinkSync(patNumPath); // ลบไฟล์ทิ้ง
+      console.log(">>> Deleted old PAT_NUM.json for a clean start");
+    } else {
+      fs.mkdirSync(path.dirname(patNumPath), { recursive: true });
+    }
+  } else {
+    // ถ้าเป็นคนไข้คนอื่น และโฟลเดอร์ยังไม่มี ให้สร้างไว้ก่อน
+    if (!fs.existsSync(path.dirname(patNumPath))) {
+      fs.mkdirSync(path.dirname(patNumPath), { recursive: true });
+    }
+  }
   // *** แก้ไขการดัก API ให้ตรงกับ URL จริงที่ระบบเรียกใช้ ***
   await page.route("**/ProductRESTService.svc/AllowManualHN", async (route) => {
     // ตรวจสอบว่าเป็น POST method ตามที่หน้าเว็บเรียกจริงๆ
@@ -248,7 +291,7 @@ test("01 - New HN - Login and Create New Patient", async ({ page }) => {
     .filter({ hasText: ": ไม่ระบุแพทย์." })
     .first()
     .click();
-  await page.waitForTimeout(10000);
+  await page.waitForTimeout(8000);
 
   await page.getByText("Apply").click();
   await page.getByText("Submit OPD Visit").click();
@@ -267,11 +310,24 @@ test("01 - New HN - Login and Create New Patient", async ({ page }) => {
 
     // Save to JSON
     const patNumPath = path.join(__dirname, "../cypress/fixtures/PAT_NUM.json");
-    let data = { PAT_NUM: { PAT_1: {} } };
+    let data: any = { PAT_NUM: {} };
     if (fs.existsSync(patNumPath)) {
-      data = JSON.parse(fs.readFileSync(patNumPath, "utf8"));
+      try {
+        data = JSON.parse(fs.readFileSync(patNumPath, "utf8"));
+        if (!data.PAT_NUM) {
+          data.PAT_NUM = {};
+        }
+      } catch (e) {
+        data = { PAT_NUM: {} };
+      }
     }
-    data.PAT_NUM["PAT_1"] = { HN1: capturedHN, VN1: capturedVN };
+    data.date = currentDateStr;
+    data.PAT_NUM[finalPatKey] = {
+      ...(data.PAT_NUM[finalPatKey] || {}),
+      HN1: capturedHN,
+      VN1: capturedVN
+    };
     fs.writeFileSync(patNumPath, JSON.stringify(data, null, 2));
+    console.log(`>>> Saved patient to key: ${finalPatKey}`);
   }
 });

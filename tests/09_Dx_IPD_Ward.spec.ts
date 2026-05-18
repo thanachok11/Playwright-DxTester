@@ -29,7 +29,8 @@ test.describe('IPD WARD', () => {
     await page.click('text=IPD Ward');
     await page.waitForTimeout(2000);
     
-    const HNNum = PAT_NUM.PAT_NUM.PAT_1.HN1;
+    const patKey = process.env.PAT_KEY || 'PAT_1';
+    const HNNum = PAT_NUM.PAT_NUM[patKey]?.HN1 || PAT_NUM.PAT_NUM.PAT_1.HN1;
     await page.locator('app-auto-complete-master-setup').nth(2).locator('input').press('Backspace');
     await page.fill('input[placeholder="HN"]', HNNum);
     await page.waitForTimeout(5000);

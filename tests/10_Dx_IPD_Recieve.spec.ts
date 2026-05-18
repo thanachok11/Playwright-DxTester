@@ -48,7 +48,8 @@ test.describe('IPD Receieve', () => {
         
         await page.selectOption('#Select1', 'ทุกกรณี');
 
-        const ANNum = PAT_NUM.PAT_NUM.PAT_1.AN1;
+        const patKey = process.env.PAT_KEY || 'PAT_1';
+        const ANNum = PAT_NUM.PAT_NUM[patKey]?.AN1 || PAT_NUM.PAT_NUM.PAT_1.AN1;
         await page.locator('app-auto-complete-master-setup').nth(2).locator('input').press('Backspace');
         await page.fill('input[placeholder="AN"]', ANNum);
         await page.waitForTimeout(5000);

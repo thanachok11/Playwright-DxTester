@@ -2,8 +2,7 @@ import { test, expect } from './utils/base-test';
 import { sendMsgToTelegram } from './utils/telegram-utils';
 import patientDataRaw from '../cypress/fixtures/DX_DATA.json';
 const patientData: any = patientDataRaw;
-import PAT_NUM_RAW from '../cypress/fixtures/PAT_NUM.json';
-const PAT_NUM: any = PAT_NUM_RAW;
+
 import dotenv from 'dotenv';
 import { LoginPage } from '../pages/login.page';
 dotenv.config();
@@ -31,9 +30,29 @@ test.describe(`OPD_MEDICINE ${specVersion}`, () => {
         await page.locator('text=Nurse Workbench').click({ force: true });
         await page.waitForTimeout(20000);
 
-        const HNNum = PAT_NUM.PAT_NUM.PAT_1.HN1;
-        await page.fill('input[placeholder="HN"]', HNNum);
-        await page.click('.btn.btn-primary.btn-sm.minwidbtn.pointer.mr-1');
+        // Read targetHN dynamically from PAT_NUM.json
+        const fs = require('fs');
+        const path = require('path');
+        const patNumPath = path.join(__dirname, '../cypress/fixtures/PAT_NUM.json');
+        let targetHN = '';
+        if (fs.existsSync(patNumPath)) {
+            try {
+                const patData = JSON.parse(fs.readFileSync(patNumPath, 'utf8'));
+                const patKey = process.env.PAT_KEY || 'PAT_1';
+                targetHN = patData.PAT_NUM[patKey]?.HN1 || patData.PAT_NUM.PAT_1.HN1;
+            } catch (e) {
+                console.log('>>> Failed to read PAT_NUM.json, falling back to first patient');
+            }
+        }
+
+        if (targetHN) {
+            console.log(`>>> Selecting patient with HN: ${targetHN}`);
+            const patientCard = page.locator('.mat-expansion-panel-body, tr, .mat-row, div').filter({ hasText: targetHN }).first();
+            await patientCard.locator('.btn.btn-primary.btn-sm.minwidbtn.pointer.mr-1').first().click();
+        } else {
+            console.log('>>> No target HN found, clicking first patient');
+            await page.click('.btn.btn-primary.btn-sm.minwidbtn.pointer.mr-1');
+        }
         await page.waitForTimeout(10000);
 
         await page.click('text=Order Medicine');
